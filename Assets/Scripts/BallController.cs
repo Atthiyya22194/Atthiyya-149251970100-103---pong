@@ -4,39 +4,84 @@ using UnityEngine;
 
 public class BallController : MonoBehaviour
 {
-    //[SerializeField] float speed;
-    public Vector2 speed;
-    public Vector2 resetPosition;
-    private Rigidbody2D rb;
+    [SerializeField] int earlySpeed;
+    [SerializeField] int speed;    
+
+    [SerializeField] Collider[] goal;
+    [SerializeField] ScoreManager score;
+    [SerializeField] BallSpawnerManager spawner;
+
+    [HideInInspector] public Vector3 direction;
+
+    private Rigidbody rb;
 
     private void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        rb.velocity = speed;
-        //BallMovement();
+        rb = GetComponent<Rigidbody>();
+        rb.velocity = direction * earlySpeed;
     }
 
     private void Update()
     {
-        transform.Translate(speed * Time.deltaTime);
+        if(transform.position.y <= -10)
+        {
+            spawner.DestroyBall(gameObject);
+            Debug.Log("Destroyed");
+        }
     }
 
-    /*private void BallMovement()
-    {
-        float x = Random.Range(0, 2) == 0 ? -1 : 1;
-        float y = Random.Range(0, 2) == 0 ? -1 : 1;
-        rb.velocity = new Vector2(speed * x, speed * y);
-<<<<<<< Updated upstream
-=======
-    }*/
+    private void OnCollisionEnter(Collision collision)
+    {        
+        if (collision.gameObject.tag == "Player" ||
+           collision.gameObject.tag == "Tower" ||
+           collision.gameObject.tag == "Ball" ||
+           collision.gameObject.tag == "Wall")
+        {
+            if (rb.velocity.magnitude < speed)
+            {
+                rb.velocity = rb.velocity.normalized * speed;
+            }
+        }
 
-    public void ResetBall()
-    {
-        transform.position = new Vector3(resetPosition.x, resetPosition.y, 2);
+        if (collision.gameObject.tag == "Player" ||
+           collision.gameObject.tag == "Tower" ||
+           collision.gameObject.tag == "Wall")
+        {
+            rb.constraints = RigidbodyConstraints.FreezePositionY;
+        }
     }
 
-    public void ActivatePUSpeedUp(float magnitude)
+    private void OnTriggerEnter(Collider other)
     {
-        rb.velocity *= magnitude;
+        if (other.gameObject.tag == "Goal")
+        {
+            rb.constraints = RigidbodyConstraints.None;
+        }
+
+        if (other == goal[0])
+        {
+            score.AddP1Score(1);
+            spawner.RemoveBall(gameObject);
+        }
+        if (other == goal[1])
+        {
+            score.AddP2Score(1);
+            spawner.RemoveBall(gameObject);
+        }
+        if (other == goal[2])
+        {
+            score.AddP3Score(1);
+            spawner.RemoveBall(gameObject);
+        }
+        if (other == goal[3])
+        {
+            score.AddP4Score(1);
+            spawner.RemoveBall(gameObject);
+        }
+
+        if (other.CompareTag("Destroyer"))
+        {
+            spawner.DestroyBall(gameObject);
+        }
     }
 }
